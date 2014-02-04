@@ -1,0 +1,17 @@
+{
+  "uuid": "90429d7d-5d1a-41d1-ac0d-31d13383fb19",
+  "shortName": "bat_spindle",
+  "longName": "bat_spindle",
+  "companyName": "MakeAwesomeHappen",
+  "versionCode": 1,
+  "versionLabel": "1.0.0",
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
