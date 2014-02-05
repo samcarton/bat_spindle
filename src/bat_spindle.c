@@ -1,7 +1,8 @@
 #include <pebble.h>
+#include <string.h>
 
 static Window *window;
-static TextLayer *text_layer;
+
 
 static TextLayer *hour_layer;
 static TextLayer *minute_layer;
@@ -9,8 +10,13 @@ static TextLayer *minute_layer;
 static AppTimer *timer;
 const uint32_t timerTick = 50;
 
-const unsigned int textXPadding = 5;
-const unsigned int textYPadding = 5;
+const unsigned char textXPadding = 5;
+const unsigned char textYPadding = 15;
+const unsigned char textXSize = 60; 
+const unsigned char textYSize = 50;
+
+const unsigned char timeTransitionAngle = 90;
+short int timeTransitionedThisTick = 0;
 
 Layer *spinner_display_layer;
 
@@ -27,13 +33,18 @@ const GPathInfo SPINNER_PATH_POINTS =
 
 static GPath *spinner_path;
 
-static unsigned int spinAngle = 0;
+static unsigned char spinAngle = 0;
 
-const unsigned int spinAmount = 5;
+const unsigned char spinAmount = 5;
+
+static char hour_text_next[] = "00";
+static char hour_text[] = "00";
+static char minute_text_next[] = "00";
+static char minute_text[] = "00";
 
 
 static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed);
-
+static void updateTextLayers();
 
 static void timer_callback(void *data)
 {
@@ -41,6 +52,7 @@ static void timer_callback(void *data)
 
   spinAngle += spinAmount;
 
+  
   if(spinAngle < 180)
   {
     timer = app_timer_register(timerTick, timer_callback, NULL);
@@ -48,6 +60,15 @@ static void timer_callback(void *data)
   else
   {
     spinAngle = 0;
+  }
+
+  if(timeTransitionedThisTick == 0)
+  {
+    if(spinAngle > timeTransitionAngle)
+    {
+      updateTextLayers();
+      timeTransitionedThisTick = 1;
+    }
   }
 
 }
@@ -80,31 +101,29 @@ static void window_load(Window *window) {
   gpath_move_to(spinner_path, grect_center_point(&bounds));
 
   //init hour text layer
-  hour_layer = text_layer_create((GRect) { .origin = { textXPadding, textYPadding }, .size = { 50, 50 } });
+  hour_layer = text_layer_create((GRect) { .origin = { textXPadding, textYPadding }, .size = { textXSize, textYSize } });
   text_layer_set_text_color(hour_layer, GColorWhite);
   text_layer_set_background_color(hour_layer, GColorClear);
   text_layer_set_font(hour_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
   text_layer_set_text_alignment(hour_layer, GTextAlignmentCenter);
-  text_layer_set_text(hour_layer, "alaskdjflsadkjf");
+  text_layer_set_text(hour_layer, "");
   layer_add_child(window_layer, text_layer_get_layer(hour_layer));
 
   //init minute text layer
-  minute_layer = text_layer_create((GRect) { .origin = { 144 - 50 - textXPadding, 168 - 50 - textYPadding }, .size = { 50, 50 } });
+  minute_layer = text_layer_create((GRect) { .origin = { 144 - textXSize - textXPadding, 168 - textYSize - textYPadding }, .size = { textXSize, textYSize } });
   text_layer_set_text_color(minute_layer, GColorWhite);
   text_layer_set_background_color(minute_layer, GColorClear);
   text_layer_set_font(minute_layer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
   text_layer_set_text_alignment(minute_layer, GTextAlignmentCenter);
-  text_layer_set_text(minute_layer, "alaskdjflsadkjf");
+  text_layer_set_text(minute_layer, "");
   layer_add_child(window_layer, text_layer_get_layer(minute_layer));
-
-  time_t now = time(NULL);
-  struct tm *current_time = localtime(&now);
-  handle_minute_tick(current_time, SECOND_UNIT);
 
 }
 
 static void window_unload(Window *window) {
-  text_layer_destroy(text_layer);
+  text_layer_destroy(hour_layer);
+  text_layer_destroy(minute_layer);
+  gpath_destroy(spinner_path);
 }
 
 static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
@@ -114,15 +133,22 @@ static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
   timer = app_timer_register(timerTick, timer_callback, NULL);
 
   // SET MINUTE UPDATE TO OCCUR HALF WAY THRU TRANSITION SO NUMBER CHANGE IS HIDDEN
-  //update clock display
-  static char hour_text[] = "00";
-  strftime(hour_text, sizeof(hour_text), "%H", tick_time);
-  text_layer_set_text(hour_layer, hour_text);
+  timeTransitionedThisTick = 0;
 
-  static char minute_text[] = "00";
-  strftime(minute_text, sizeof(minute_text), "%M", tick_time);
+  //Save Time strings for updating later  
+  strftime(hour_text_next, sizeof(hour_text_next), "%H", tick_time);
+  strftime(minute_text_next, sizeof(minute_text_next), "%M", tick_time);
+  
+}
+
+static void updateTextLayers()
+{
+  strcpy(hour_text,hour_text_next);
+  strcpy(minute_text,minute_text_next);
+  text_layer_set_text(hour_layer, hour_text);
   text_layer_set_text(minute_layer, minute_text);
 }
+
 
 static void init(void) {
   window = window_create();
@@ -139,6 +165,7 @@ static void init(void) {
 }
 
 static void deinit(void) {
+  // UPDATE THIS
   window_destroy(window);
 }
 
