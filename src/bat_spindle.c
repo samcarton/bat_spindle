@@ -46,7 +46,6 @@ static char minute_text[] = "00";
 // Change from angle to time-based spin
 static uint32_t currentSpinProgress = 0;
 const uint32_t lengthOfSpin = 2000; //ms
-const float M_PI = 3.14159265359f;
 
 static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed);
 static void updateTextLayers();
@@ -89,6 +88,7 @@ static float easingFunction(float p)
   return bounceEaseOut(p);
 }
 
+// Easing functions adapted from https://github.com/warrenm/AHEasing/ (WTFPL license)
 static float backEaseOut(float p)
 {
   float f = (1 - p);
