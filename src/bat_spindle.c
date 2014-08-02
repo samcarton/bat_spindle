@@ -8,7 +8,7 @@ static TextLayer *hour_layer;
 static TextLayer *minute_layer;
 
 static AppTimer *timer;
-const uint32_t timerTick = 50;
+const uint32_t timerTick = 50; //ms
 
 const unsigned char textXPadding = 5;
 const unsigned char textYPadding = 15;
@@ -43,28 +43,39 @@ static char minute_text_next[] = "00";
 static char minute_text[] = "00";
 
 
+// Change from angle to time-based spin
+static uint32_t currentSpinProgress = 0;
+const uint32_t lengthOfSpin = 2000; //ms
+const float M_PI = 3.14159265359f;
+
 static void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed);
 static void updateTextLayers();
+static float easingFunction(float p);
+static float backEaseInOut(float p);
+static float backEaseOut(float p);
+static float bounceEaseOut(float p);
 
 static void timer_callback(void *data)
 {
   layer_mark_dirty(spinner_display_layer);
-
-  spinAngle += spinAmount;
-
   
-  if(spinAngle < 180)
+  currentSpinProgress += timerTick;
+  float eased = easingFunction(currentSpinProgress/(lengthOfSpin*1.0f));
+  spinAngle = 180*eased;
+  
+  if(currentSpinProgress < lengthOfSpin)
   {
     timer = app_timer_register(timerTick, timer_callback, NULL);
   }
   else
   {
     spinAngle = 0;
+    currentSpinProgress = 0;
   }
 
   if(timeTransitionedThisTick == 0)
   {
-    if(spinAngle > timeTransitionAngle)
+    if(eased > 0.5f) 
     {
       updateTextLayers();
       timeTransitionedThisTick = 1;
@@ -72,6 +83,52 @@ static void timer_callback(void *data)
   }
 
 }
+
+static float easingFunction(float p)
+{  
+  return bounceEaseOut(p);
+}
+
+static float backEaseOut(float p)
+{
+  float f = (1 - p);
+  return 1 - (f * f - f * sin_lookup(f * TRIG_MAX_ANGLE)/(TRIG_MAX_RATIO*1.0f));
+}
+
+static float backEaseInOut(float p)
+{  
+  if(p < 0.5)
+  {
+    float f = 2 * p;
+    return 0.5 * (f * f * f - f * sin_lookup(f * TRIG_MAX_ANGLE)/(TRIG_MAX_RATIO*1.0f));
+  }
+  else
+  {
+    float f = (1 - (2*p - 1));
+    return 0.5 * (1 - (f * f * f - f * sin_lookup(f * TRIG_MAX_ANGLE)/(TRIG_MAX_RATIO*1.0f))) + 0.5;
+  }
+}
+
+static float bounceEaseOut(float p)
+{
+  if(p < 4/11.0)
+  {
+    return (121 * p * p)/16.0;
+  }
+  else if(p < 8/11.0)
+  {
+    return (363/40.0 * p * p) - (99/10.0 * p) + 17/5.0;
+  }
+  else if(p < 9/10.0)
+  {
+    return (4356/361.0 * p * p) - (35442/1805.0 * p) + 16061/1805.0;
+  }
+  else
+  {
+    return (54/5.0 * p * p) - (513/25.0 * p) + 268/25.0;
+  }
+}
+
 
 static void spinner_display_layer_callback(Layer *layer, GContext* ctx)
 {
