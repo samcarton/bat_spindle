@@ -1,15 +1,12 @@
 {
   "uuid": "90429d7d-5d1a-41d1-ac0d-31d13383fb19",
   "shortName": "Spindle",
-  "longName": "Spindle by Sombat",
-  "companyName": "Sombat",
-  "versionCode": 1,
-  "versionLabel": "1.0.0",
+  "longName": "Spindle by Sam Carton",
+  "companyName": "Sam Carton",
+  "versionCode": 2,
+  "versionLabel": "2.0.0",
   "watchapp": {
     "watchface": true
-  },
-  "appKeys": {
-    "dummy": 0
   },
   "resources": {
     "media": [
